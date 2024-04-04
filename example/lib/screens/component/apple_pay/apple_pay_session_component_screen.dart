@@ -95,8 +95,6 @@ class ApplePaySessionComponentScreen extends StatelessWidget {
           type: ApplePaySummaryItemType.definite,
         ),
       ],
-      applePayShippingType: ApplePayShippingType.shipping,
-      allowShippingContactEditing: true,
     );
   }
 
