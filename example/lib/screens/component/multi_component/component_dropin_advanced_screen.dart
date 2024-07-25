@@ -185,6 +185,7 @@ class DropInComponentAdvancedScreen extends StatelessWidget {
         width: double.infinity,
         height: 48,
         onPaymentResult: (paymentResult) {
+          Navigator.pop(context);
           DialogBuilder.showPaymentResultDialog(paymentResult, context);
         },
       ),
@@ -237,6 +238,7 @@ class DropInComponentAdvancedScreen extends StatelessWidget {
       );
 
       if (context.mounted) {
+        Navigator.pop(context);
         DialogBuilder.showPaymentResultDialog(paymentResult, context);
       }
     } catch (error) {
