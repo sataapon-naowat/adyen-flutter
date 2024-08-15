@@ -53,7 +53,7 @@ class CardComponentContainer extends StatelessWidget {
       case null:
         return initialViewHeight;
       case > 0:
-        return snapshot.data + marginBottom;
+        return snapshot.data;
       default:
         return initialViewHeight;
     }

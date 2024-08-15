@@ -116,6 +116,7 @@ extension CardConfigurationDTO {
         let billingAddressConfiguration = determineBillingAddressConfiguration(addressMode: addressMode)
         return CardComponent.Configuration(
             style: cardComponentStyle,
+            showsSubmitButton: false,
             localizationParameters: localizationParameters,
             showsHolderNameField: holderNameRequired,
             showsStorePaymentMethodField: showStorePaymentField,

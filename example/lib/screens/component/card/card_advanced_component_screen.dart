@@ -21,7 +21,7 @@ class CardAdvancedComponentScreen extends StatelessWidget {
     countryCode: Config.countryCode,
     shopperLocale: Config.shopperLocale,
     cardConfiguration: const CardConfiguration(
-      holderNameRequired: true,
+       holderNameRequired: true,
     ),
   );
 
@@ -38,17 +38,25 @@ class CardAdvancedComponentScreen extends StatelessWidget {
               if (snapshot.data == null) {
                 return const SizedBox.shrink();
               } else {
-                return SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      _buildCardWidget(
-                        snapshot.data!,
-                        context,
+                return Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: Column(
+                          children: [
+                            FlutterLogo(size: 60),
+                            _buildCardWidget(
+                              snapshot.data!,
+                              context,
+                            ),
+                            Container(height: 1000, color: const Color(0xFFEDEDED)),
+                            const Text("DEMO TEXT"),
+                          ],
+                        ),
                       ),
-                      Container(height: 600, color: const Color(0xFFEDEDED)),
-                    ],
-                  ),
+                    ),
+                  ],
                 );
               }
             },

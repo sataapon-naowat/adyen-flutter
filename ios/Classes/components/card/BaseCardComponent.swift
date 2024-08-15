@@ -2,8 +2,10 @@
 import Adyen
 import AdyenNetworking
 import Flutter
+import UIKit
 
-class BaseCardComponent: NSObject, FlutterPlatformView, UIScrollViewDelegate {
+class BaseCardComponent : NSObject, FlutterPlatformView {
+    
     let cardComponentConfigurationKey = "cardComponentConfiguration"
     let isStoredPaymentMethodKey = "isStoredPaymentMethod"
     let paymentMethodKey = "paymentMethod"
@@ -14,11 +16,12 @@ class BaseCardComponent: NSObject, FlutterPlatformView, UIScrollViewDelegate {
     let componentId: String
     let componentFlutterApi: ComponentFlutterInterface
     let componentPlatformApi: ComponentPlatformApi
-    let componentWrapperView: ComponentWrapperView
+    var componentWrapperView: ComponentWrapperView?
 
     var cardComponent: CardComponent?
-    var contentOffset: CGPoint?
-
+    
+    // MARK: - Initalizers
+    
     init(
         frame _: CGRect,
         viewIdentifier _: Int64,
@@ -33,20 +36,15 @@ class BaseCardComponent: NSObject, FlutterPlatformView, UIScrollViewDelegate {
         paymentMethod = arguments.value(forKey: paymentMethodKey) as? String
         isStoredPaymentMethod = arguments.value(forKey: isStoredPaymentMethodKey) as? Bool ?? false
         componentId = arguments.value(forKey: componentIdKey) as? String ?? ""
-        componentWrapperView = .init()
         super.init()
-
+        
         setupResizeViewportCallback()
     }
-
+    
     func view() -> UIView {
-        componentWrapperView
+        return componentWrapperView ?? UITextView()
     }
-
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        scrollView.contentOffset = .zero
-    }
-
+    
     func getViewController() -> UIViewController? {
         var rootViewController = UIApplication.shared.adyen.mainKeyWindow?.rootViewController
         while let presentedViewController = rootViewController?.presentedViewController {
@@ -55,39 +53,38 @@ class BaseCardComponent: NSObject, FlutterPlatformView, UIScrollViewDelegate {
 
         return rootViewController
     }
-
+    
     func showCardComponent(cardComponent: CardComponent) {
         self.cardComponent = cardComponent
         if isStoredPaymentMethod {
             let storedCardViewController = cardComponent.viewController
-            attachActivityIndicator()
+            //attachActivityIndicator()
             getViewController()?.presentViewController(storedCardViewController, animated: true)
         } else {
-            guard let cardView = cardComponent.viewController.view else { return }
-            attachCardView(cardView: cardView)
+            //getViewController()?.addChild(cardComponent.viewController)
+            componentWrapperView = ComponentWrapperView(cardComponent: cardComponent) { [weak self] in
+               self?.sendHeightUpdate()
+            }
+            //cardComponent.viewController.didMove(toParent: getViewController())
         }
     }
-
-    func attachCardView(cardView: UIView) {
-        componentWrapperView.addSubview(cardView)
-        disableNativeScrollingAndBouncing(cardView: cardView)
-        adjustCardComponentLayout(cardView: cardView)
-        sendHeightUpdate()
-    }
-
+    
+    
+    /*
     func attachActivityIndicator() {
-        let activityIndicatorView = UIActivityIndicatorView(style: .whiteLarge)
-        activityIndicatorView.color = .gray
-        activityIndicatorView.startAnimating()
-        componentWrapperView.addSubview(activityIndicatorView)
-        activityIndicatorView.translatesAutoresizingMaskIntoConstraints = false
-        let leadingConstraint = activityIndicatorView.leadingAnchor.constraint(equalTo: componentWrapperView.leadingAnchor)
-        let trailingConstraint = activityIndicatorView.trailingAnchor.constraint(equalTo: componentWrapperView.trailingAnchor)
-        let topConstraint = activityIndicatorView.topAnchor.constraint(equalTo: componentWrapperView.topAnchor)
-        let bottomConstraint = activityIndicatorView.bottomAnchor.constraint(equalTo: componentWrapperView.bottomAnchor)
-        NSLayoutConstraint.activate([leadingConstraint, trailingConstraint, topConstraint, bottomConstraint])
-    }
-
+           let activityIndicatorView = UIActivityIndicatorView(style: .whiteLarge)
+           activityIndicatorView.color = .gray
+           activityIndicatorView.startAnimating()
+           componentWrapperView?.addSubview(activityIndicatorView)
+           activityIndicatorView.translatesAutoresizingMaskIntoConstraints = false
+           let leadingConstraint = activityIndicatorView.leadingAnchor.constraint(equalTo: componentWrapperView.leadingAnchor)
+           let trailingConstraint = activityIndicatorView.trailingAnchor.constraint(equalTo: componentWrapperView.trailingAnchor)
+           let topConstraint = activityIndicatorView.topAnchor.constraint(equalTo: componentWrapperView.topAnchor)
+           let bottomConstraint = activityIndicatorView.bottomAnchor.constraint(equalTo: componentWrapperView.bottomAnchor)
+           NSLayoutConstraint.activate([leadingConstraint, trailingConstraint, topConstraint, bottomConstraint])
+       }
+     */
+    
     func sendErrorToFlutterLayer(errorMessage: String) {
         let componentCommunicationModel = ComponentCommunicationModel(
             type: ComponentCommunicationType.result,
@@ -102,7 +99,7 @@ class BaseCardComponent: NSObject, FlutterPlatformView, UIScrollViewDelegate {
             completion: { _ in }
         )
     }
-
+    
     func finalizeAndDismiss(
         success: Bool,
         completion: @escaping (() -> Void)
@@ -113,38 +110,29 @@ class BaseCardComponent: NSObject, FlutterPlatformView, UIScrollViewDelegate {
             })
         }
     }
-
+    
     private func disableNativeScrollingAndBouncing(cardView: UIView) {
         let formView = cardView.subviews[0].subviews[0] as? UIScrollView
-        formView?.delegate = self
         formView?.bounces = false
         formView?.isScrollEnabled = false
         formView?.alwaysBounceVertical = false
         formView?.contentInsetAdjustmentBehavior = .never
     }
-
-    private func adjustCardComponentLayout(cardView: UIView) {
-        cardView.translatesAutoresizingMaskIntoConstraints = false
-        let leadingConstraint = cardView.leadingAnchor.constraint(equalTo: componentWrapperView.leadingAnchor)
-        let trailingConstraint = cardView.trailingAnchor.constraint(equalTo: componentWrapperView.trailingAnchor)
-        let topConstraint = cardView.topAnchor.constraint(equalTo: componentWrapperView.topAnchor)
-        let bottomConstraint = cardView.bottomAnchor.constraint(equalTo: componentWrapperView.bottomAnchor)
-        NSLayoutConstraint.activate([leadingConstraint, trailingConstraint, topConstraint, bottomConstraint])
-    }
-
+    
     private func setupResizeViewportCallback() {
-        componentWrapperView.resizeViewportCallback = { [weak self] in
-            self?.sendHeightUpdate()
-        }
-
         componentPlatformApi.onUpdateViewHeightCallback = { [weak self] in
             self?.sendHeightUpdate()
         }
     }
-
+    
     private func sendHeightUpdate() {
-        guard let viewHeight = cardComponent?.viewController.preferredContentSize.height else { return }
+        //guard let viewHeight = cardComponent?.viewController.preferredContentSize.height else { return }
+        //let viewHeight = componentWrapperView?.arrangedSubviews.first?.bounds.height  ?? 0
+        var viewHeight = componentWrapperView?.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height ?? 0
+        viewHeight += 60
         let roundedViewHeight = Double(round(100 * viewHeight / 100))
+        print("size", roundedViewHeight)
+        
         let componentCommunicationModel = ComponentCommunicationModel(
             type: ComponentCommunicationType.resize,
             componentId: componentId,
