@@ -15,5 +15,6 @@ class Constants {
         const val SDK_PAYMENT_CANCELED_IDENTIFIER = "Payment canceled"
         const val ADVANCED_PAYMENT_DATA_KEY = "data"
         const val ADVANCED_EXTRA_DATA_KEY = "extra"
+        const val COMPONENT_LOADING_BOTTOM_SHEET_TAG = "AdyenComponentLoadingBottomSheet"
     }
 }

@@ -4,15 +4,20 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.ViewModelProvider
 import com.adyen.checkout.components.core.internal.Component
 import com.adyen.checkout.flutter.R
+import com.adyen.checkout.flutter.utils.Constants.Companion.COMPONENT_LOADING_BOTTOM_SHEET_TAG
 import com.adyen.checkout.ui.core.AdyenComponentView
 import com.adyen.checkout.ui.core.internal.ui.ViewableComponent
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
-class ComponentLoadingBottomSheet<T>(private val component: T) :
-    BottomSheetDialogFragment() where T : ViewableComponent, T : Component {
+class ComponentLoadingBottomSheet<T> : BottomSheetDialogFragment() where T : Component, T : ViewableComponent {
+    private val viewModel: ComponentLoadingBottomSheetViewModel<T> by activityViewModels()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -23,7 +28,8 @@ class ComponentLoadingBottomSheet<T>(private val component: T) :
         view: View,
         savedInstanceState: Bundle?
     ) {
-        view.findViewById<AdyenComponentView>(R.id.adyen_component_view)?.attach(component, viewLifecycleOwner)
+        view.findViewById<AdyenComponentView>(R.id.adyen_component_view)
+            ?.attach(viewModel.component, viewLifecycleOwner)
         isCancelable = false
     }
 
@@ -35,17 +41,17 @@ class ComponentLoadingBottomSheet<T>(private val component: T) :
         }
 
     companion object {
-        private const val TAG = "AdyenComponentLoadingBottomSheet"
-
         fun <T> show(
-            fragmentManager: FragmentManager,
+            activity: FragmentActivity,
             component: T
-        ) where T : ViewableComponent, T : Component {
-            ComponentLoadingBottomSheet(component).show(fragmentManager, TAG)
+        ) where T : Component, T : ViewableComponent {
+            val factory = ComponentLoadingBottomSheetViewModel.Companion.ViewModelFactory(component)
+            ViewModelProvider(activity, factory)[ComponentLoadingBottomSheetViewModel::class.java]
+            ComponentLoadingBottomSheet<T>().show(activity.supportFragmentManager, COMPONENT_LOADING_BOTTOM_SHEET_TAG)
         }
 
         fun hide(fragmentManager: FragmentManager) {
-            fragmentManager.findFragmentByTag(TAG)?.let {
+            fragmentManager.findFragmentByTag(COMPONENT_LOADING_BOTTOM_SHEET_TAG)?.let {
                 (it as? BottomSheetDialogFragment)?.dismiss()
             }
         }
