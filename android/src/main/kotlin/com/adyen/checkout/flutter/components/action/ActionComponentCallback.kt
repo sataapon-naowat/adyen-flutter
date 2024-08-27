@@ -4,19 +4,17 @@ import ComponentCommunicationModel
 import ComponentFlutterInterface
 import PaymentResultDTO
 import PaymentResultEnum
-import androidx.fragment.app.FragmentActivity
 import com.adyen.checkout.components.core.ActionComponentCallback
 import com.adyen.checkout.components.core.ActionComponentData
 import com.adyen.checkout.components.core.ComponentError
-import com.adyen.checkout.flutter.components.view.ComponentLoadingBottomSheet
 
 internal class ActionComponentCallback(
-    private val activity: FragmentActivity,
     private val componentFlutterApi: ComponentFlutterInterface,
-    private val componentId: String
+    private val componentId: String,
+    private val hideLoadingBottomSheet: () -> Unit,
 ) : ActionComponentCallback {
     override fun onAdditionalDetails(actionComponentData: ActionComponentData) {
-        ComponentLoadingBottomSheet.hide(activity.supportFragmentManager)
+        hideLoadingBottomSheet()
         val data = ActionComponentData.SERIALIZER.serialize(actionComponentData).toString()
         val model =
             ComponentCommunicationModel(
@@ -28,7 +26,7 @@ internal class ActionComponentCallback(
     }
 
     override fun onError(componentError: ComponentError) {
-        ComponentLoadingBottomSheet.hide(activity.supportFragmentManager)
+        hideLoadingBottomSheet()
         val type: PaymentResultEnum =
             when (componentError.exception) {
                 is com.adyen.checkout.core.exception.CancellationException -> PaymentResultEnum.CANCELLEDBYUSER

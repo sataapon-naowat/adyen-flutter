@@ -9,7 +9,6 @@ import com.adyen.checkout.action.core.GenericActionComponent
 import com.adyen.checkout.action.core.internal.ActionHandlingComponent
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.action.Action
-import com.adyen.checkout.flutter.components.view.ComponentLoadingBottomSheet
 import com.adyen.checkout.flutter.utils.ConfigurationMapper.mapToCheckoutConfiguration
 import org.json.JSONObject
 import java.util.UUID
@@ -19,6 +18,12 @@ internal class ActionComponentManager(
     private val componentFlutterApi: ComponentFlutterInterface,
     private val assignCurrentComponent: (ActionHandlingComponent?) -> Unit,
 ) {
+    private var componentId: String? = null
+
+    companion object {
+        var component: GenericActionComponent? = null
+    }
+
     fun handleAction(
         actionComponentConfigurationDTO: ActionComponentConfigurationDTO,
         componentId: String,
@@ -31,17 +36,26 @@ internal class ActionComponentManager(
             }
 
             val checkoutConfiguration = actionComponentConfigurationDTO.mapToCheckoutConfiguration()
-            val actionComponent = createActionComponent(checkoutConfiguration, componentId)
             val action = Action.SERIALIZER.deserialize(JSONObject(actionResponse))
-            if (actionComponent.canHandleAction(action)) {
-                assignCurrentComponent(actionComponent)
-                ComponentLoadingBottomSheet.show(activity.supportFragmentManager, actionComponent)
-                actionComponent.handleAction(action, activity)
+            component = createActionComponent(checkoutConfiguration, componentId)
+            this.componentId = componentId
+            if (component?.canHandleAction(action) == true) {
+                assignCurrentComponent(component)
+                ActionComponentLoadingBottomSheet.show(activity.supportFragmentManager)
+                component?.handleAction(action, activity)
             } else {
                 sendErrorToFlutterLayer(componentId, "Action component cannot handle action response.")
+                reset()
             }
         } catch (exception: Exception) {
             sendErrorToFlutterLayer(componentId, exception.message ?: "Action handling failed.")
+            reset()
+        }
+    }
+
+    fun onDispose(componentId: String) {
+        if (componentId == this.componentId) {
+            reset()
         }
     }
 
@@ -53,9 +67,9 @@ internal class ActionComponentManager(
             activity,
             checkoutConfiguration,
             ActionComponentCallback(
-                activity,
                 componentFlutterApi,
                 componentId,
+                ::hideLoadingBottomSheet,
             ),
             UUID.randomUUID().toString()
         )
@@ -72,5 +86,12 @@ internal class ActionComponentManager(
                 paymentResult = PaymentResultDTO(PaymentResultEnum.ERROR, errorMessage),
             )
         componentFlutterApi.onComponentCommunication(model) {}
+    }
+
+    private fun hideLoadingBottomSheet() = ActionComponentLoadingBottomSheet.hide(activity.supportFragmentManager)
+
+    private fun reset() {
+        componentId = null
+        component = null
     }
 }
