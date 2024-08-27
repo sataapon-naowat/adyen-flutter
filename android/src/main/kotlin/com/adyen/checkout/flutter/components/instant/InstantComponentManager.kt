@@ -12,7 +12,6 @@ import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.flutter.components.instant.advanced.InstantComponentAdvancedCallback
 import com.adyen.checkout.flutter.components.instant.session.InstantComponentSessionCallback
-import com.adyen.checkout.flutter.components.view.ComponentLoadingBottomSheet
 import com.adyen.checkout.flutter.session.SessionHolder
 import com.adyen.checkout.flutter.utils.ConfigurationMapper.mapToCheckoutConfiguration
 import com.adyen.checkout.flutter.utils.Constants
@@ -28,8 +27,11 @@ class InstantComponentManager(
     private val sessionHolder: SessionHolder,
     private val assignCurrentComponent: (ActionHandlingComponent?) -> Unit,
 ) {
-    private var instantPaymentComponent: InstantPaymentComponent? = null
     private var componentId: String? = null
+
+    companion object {
+        internal var component: InstantPaymentComponent? = null
+    }
 
     fun start(
         instantPaymentConfigurationDTO: InstantPaymentConfigurationDTO,
@@ -39,7 +41,8 @@ class InstantComponentManager(
         try {
             val paymentMethod = PaymentMethod.SERIALIZER.deserialize(JSONObject(encodedPaymentMethod))
             val configuration = instantPaymentConfigurationDTO.mapToCheckoutConfiguration()
-            val instantPaymentComponent =
+            this.componentId = componentId
+            component =
                 when (componentId) {
                     Constants.INSTANT_ADVANCED_COMPONENT_KEY ->
                         createInstantAdvancedComponent(
@@ -58,10 +61,8 @@ class InstantComponentManager(
                     else -> throw IllegalStateException("Instant component not available for payment flow.")
                 }
 
-            this.instantPaymentComponent = instantPaymentComponent
-            this.componentId = componentId
-            assignCurrentComponent(instantPaymentComponent)
-            ComponentLoadingBottomSheet.show(activity.supportFragmentManager, instantPaymentComponent)
+            assignCurrentComponent(component)
+            InstantComponentLoadingBottomSheet.show(activity.supportFragmentManager)
         } catch (exception: Exception) {
             val model =
                 ComponentCommunicationModel(
@@ -74,12 +75,13 @@ class InstantComponentManager(
                         ),
                 )
             componentFlutterInterface.onComponentCommunication(model) {}
+            reset()
         }
     }
 
     fun onDispose(componentId: String) {
         if (componentId == this.componentId) {
-            instantPaymentComponent = null
+            reset()
         }
     }
 
@@ -132,7 +134,12 @@ class InstantComponentManager(
         )
     }
 
-    private fun handleAction(action: Action) = instantPaymentComponent?.handleAction(action, activity)
+    private fun handleAction(action: Action) = component?.handleAction(action, activity)
 
-    private fun hideLoadingBottomSheet() = ComponentLoadingBottomSheet.hide(activity.supportFragmentManager)
+    private fun hideLoadingBottomSheet() = InstantComponentLoadingBottomSheet.hide(activity.supportFragmentManager)
+
+    private fun reset() {
+        componentId = null
+        component = null
+    }
 }
