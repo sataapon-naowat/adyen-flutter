@@ -14,6 +14,7 @@ import com.adyen.checkout.components.core.PaymentMethod
 import com.adyen.checkout.components.core.action.Action
 import com.adyen.checkout.flutter.components.googlepay.advanced.GooglePayAdvancedCallback
 import com.adyen.checkout.flutter.components.googlepay.session.GooglePaySessionCallback
+import com.adyen.checkout.flutter.components.view.ComponentLoadingBottomSheet
 import com.adyen.checkout.flutter.session.SessionHolder
 import com.adyen.checkout.flutter.utils.ConfigurationMapper.mapToCheckoutConfiguration
 import com.adyen.checkout.flutter.utils.Constants
@@ -32,10 +33,7 @@ class GooglePayComponentManager(
     private var componentId: String? = null
     private var checkoutConfiguration: CheckoutConfiguration? = null
     private var setupCallback: ((Result<InstantPaymentSetupResultDTO>) -> Unit)? = null
-
-    companion object {
-        internal var component: GooglePayComponent? = null
-    }
+    private var component: GooglePayComponent? = null
 
     override fun onAvailabilityResult(
         isAvailable: Boolean,
@@ -211,11 +209,11 @@ class GooglePayComponentManager(
     private fun handleAction(action: Action) {
         component?.let {
             it.handleAction(action, activity)
-            GooglePayComponentLoadingBottomSheet.show(activity.supportFragmentManager)
+            ComponentLoadingBottomSheet.show(activity, it)
         }
     }
 
-    private fun hideLoadingBottomSheet() = GooglePayComponentLoadingBottomSheet.hide(activity.supportFragmentManager)
+    private fun hideLoadingBottomSheet() = ComponentLoadingBottomSheet.hide(activity)
 
     private fun reset() {
         componentId = null

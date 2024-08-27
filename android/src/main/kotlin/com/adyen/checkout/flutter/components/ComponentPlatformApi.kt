@@ -122,6 +122,7 @@ class ComponentPlatformApi(
         currentComponent = null
         googlePayComponentManager.onDispose(componentId)
         instantComponentManager.onDispose(componentId)
+        actionComponentManager.onDispose(componentId)
     }
 
     fun handleActivityResult(
@@ -167,6 +168,7 @@ class ComponentPlatformApi(
             )
         componentFlutterInterface.onComponentCommunication(model) {}
         hideLoadingBottomSheet()
+        print("FINISHED")
     }
 
     private fun onAction(action: Map<String?, Any?>?) {
@@ -195,7 +197,7 @@ class ComponentPlatformApi(
         hideLoadingBottomSheet()
     }
 
-    private fun hideLoadingBottomSheet() = ComponentLoadingBottomSheet.hide(activity.supportFragmentManager)
+    private fun hideLoadingBottomSheet() = ComponentLoadingBottomSheet.hide(activity)
 
     private fun assignCurrentComponent(currentComponent: ActionHandlingComponent?) {
         this.currentComponent = currentComponent

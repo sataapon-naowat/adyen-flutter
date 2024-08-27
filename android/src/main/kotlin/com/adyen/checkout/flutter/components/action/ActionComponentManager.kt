@@ -9,6 +9,7 @@ import com.adyen.checkout.action.core.GenericActionComponent
 import com.adyen.checkout.action.core.internal.ActionHandlingComponent
 import com.adyen.checkout.components.core.CheckoutConfiguration
 import com.adyen.checkout.components.core.action.Action
+import com.adyen.checkout.flutter.components.view.ComponentLoadingBottomSheet
 import com.adyen.checkout.flutter.utils.ConfigurationMapper.mapToCheckoutConfiguration
 import org.json.JSONObject
 import java.util.UUID
@@ -19,10 +20,7 @@ internal class ActionComponentManager(
     private val assignCurrentComponent: (ActionHandlingComponent?) -> Unit,
 ) {
     private var componentId: String? = null
-
-    companion object {
-        var component: GenericActionComponent? = null
-    }
+    private var component: GenericActionComponent? = null
 
     fun handleAction(
         actionComponentConfigurationDTO: ActionComponentConfigurationDTO,
@@ -41,7 +39,7 @@ internal class ActionComponentManager(
             this.componentId = componentId
             if (component?.canHandleAction(action) == true) {
                 assignCurrentComponent(component)
-                ActionComponentLoadingBottomSheet.show(activity.supportFragmentManager)
+                ComponentLoadingBottomSheet.show(activity, component!!)
                 component?.handleAction(action, activity)
             } else {
                 sendErrorToFlutterLayer(componentId, "Action component cannot handle action response.")
@@ -88,7 +86,7 @@ internal class ActionComponentManager(
         componentFlutterApi.onComponentCommunication(model) {}
     }
 
-    private fun hideLoadingBottomSheet() = ActionComponentLoadingBottomSheet.hide(activity.supportFragmentManager)
+    private fun hideLoadingBottomSheet() = ComponentLoadingBottomSheet.hide(activity)
 
     private fun reset() {
         componentId = null
