@@ -58,6 +58,9 @@ enum PlatformCommunicationType {
   additionalDetails,
   result,
   deleteStoredPaymentMethod,
+  balanceCheck,
+  requestOrder,
+  cancelOrder,
 }
 
 enum ComponentCommunicationType {
@@ -599,7 +602,6 @@ abstract class CheckoutPlatformInterface {
 
 @HostApi()
 abstract class DropInPlatformInterface {
-  // TODO: Merge show dropIn methods into one.
   void showDropInSession(DropInConfigurationDTO dropInConfigurationDTO);
 
   void showDropInAdvanced(
@@ -613,6 +615,10 @@ abstract class DropInPlatformInterface {
 
   void onDeleteStoredPaymentMethodResult(
       DeletedStoredPaymentMethodResultDTO deleteStoredPaymentMethodResultDTO);
+
+  void onBalanceCheckResult(String balanceCheckResponse);
+
+  void onOrderRequestResult(String orderRequestResponse);
 
   void cleanUpDropIn();
 }
