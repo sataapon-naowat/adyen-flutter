@@ -89,6 +89,7 @@ enum PaymentEventType {
   finished,
   action,
   error,
+  update,
 }
 
 enum FieldVisibility {
@@ -1010,7 +1011,7 @@ class PaymentEventDTO {
   PaymentEventDTO({
     required this.paymentEventType,
     this.result,
-    this.actionResponse,
+    this.data,
     this.error,
   });
 
@@ -1018,7 +1019,7 @@ class PaymentEventDTO {
 
   String? result;
 
-  Map<String?, Object?>? actionResponse;
+  Map<String?, Object?>? data;
 
   ErrorDTO? error;
 
@@ -1026,7 +1027,7 @@ class PaymentEventDTO {
     return <Object?>[
       paymentEventType.index,
       result,
-      actionResponse,
+      data,
       error?.encode(),
     ];
   }
@@ -1036,7 +1037,7 @@ class PaymentEventDTO {
     return PaymentEventDTO(
       paymentEventType: PaymentEventType.values[result[0]! as int],
       result: result[1] as String?,
-      actionResponse: (result[2] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
+      data: (result[2] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
       error: result[3] != null
           ? ErrorDTO.decode(result[3]! as List<Object?>)
           : null,
@@ -1367,6 +1368,32 @@ class ActionComponentConfigurationDTO {
   }
 }
 
+class OrderCancelResponseDTO {
+  OrderCancelResponseDTO({
+    required this.orderCancelResponseBody,
+    this.updatedPaymentMethods,
+  });
+
+  Map<String?, Object?> orderCancelResponseBody;
+
+  Map<String?, Object?>? updatedPaymentMethods;
+
+  Object encode() {
+    return <Object?>[
+      orderCancelResponseBody,
+      updatedPaymentMethods,
+    ];
+  }
+
+  static OrderCancelResponseDTO decode(Object result) {
+    result as List<Object?>;
+    return OrderCancelResponseDTO(
+      orderCancelResponseBody: (result[0] as Map<Object?, Object?>?)!.cast<String?, Object?>(),
+      updatedPaymentMethods: (result[1] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
+    );
+  }
+}
+
 class _CheckoutPlatformInterfaceCodec extends StandardMessageCodec {
   const _CheckoutPlatformInterfaceCodec();
   @override
@@ -1431,29 +1458,32 @@ class _CheckoutPlatformInterfaceCodec extends StandardMessageCodec {
     } else if (value is MerchantInfoDTO) {
       buffer.putUint8(147);
       writeValue(buffer, value.encode());
-    } else if (value is OrderResponseDTO) {
+    } else if (value is OrderCancelResponseDTO) {
       buffer.putUint8(148);
       writeValue(buffer, value.encode());
-    } else if (value is PaymentEventDTO) {
+    } else if (value is OrderResponseDTO) {
       buffer.putUint8(149);
       writeValue(buffer, value.encode());
-    } else if (value is PaymentResultDTO) {
+    } else if (value is PaymentEventDTO) {
       buffer.putUint8(150);
       writeValue(buffer, value.encode());
-    } else if (value is PaymentResultModelDTO) {
+    } else if (value is PaymentResultDTO) {
       buffer.putUint8(151);
       writeValue(buffer, value.encode());
-    } else if (value is PlatformCommunicationModel) {
+    } else if (value is PaymentResultModelDTO) {
       buffer.putUint8(152);
       writeValue(buffer, value.encode());
-    } else if (value is SessionDTO) {
+    } else if (value is PlatformCommunicationModel) {
       buffer.putUint8(153);
       writeValue(buffer, value.encode());
-    } else if (value is ShippingAddressParametersDTO) {
+    } else if (value is SessionDTO) {
       buffer.putUint8(154);
       writeValue(buffer, value.encode());
-    } else if (value is UnencryptedCardDTO) {
+    } else if (value is ShippingAddressParametersDTO) {
       buffer.putUint8(155);
+      writeValue(buffer, value.encode());
+    } else if (value is UnencryptedCardDTO) {
+      buffer.putUint8(156);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -1504,20 +1534,22 @@ class _CheckoutPlatformInterfaceCodec extends StandardMessageCodec {
       case 147: 
         return MerchantInfoDTO.decode(readValue(buffer)!);
       case 148: 
-        return OrderResponseDTO.decode(readValue(buffer)!);
+        return OrderCancelResponseDTO.decode(readValue(buffer)!);
       case 149: 
-        return PaymentEventDTO.decode(readValue(buffer)!);
+        return OrderResponseDTO.decode(readValue(buffer)!);
       case 150: 
-        return PaymentResultDTO.decode(readValue(buffer)!);
+        return PaymentEventDTO.decode(readValue(buffer)!);
       case 151: 
-        return PaymentResultModelDTO.decode(readValue(buffer)!);
+        return PaymentResultDTO.decode(readValue(buffer)!);
       case 152: 
-        return PlatformCommunicationModel.decode(readValue(buffer)!);
+        return PaymentResultModelDTO.decode(readValue(buffer)!);
       case 153: 
-        return SessionDTO.decode(readValue(buffer)!);
+        return PlatformCommunicationModel.decode(readValue(buffer)!);
       case 154: 
-        return ShippingAddressParametersDTO.decode(readValue(buffer)!);
+        return SessionDTO.decode(readValue(buffer)!);
       case 155: 
+        return ShippingAddressParametersDTO.decode(readValue(buffer)!);
+      case 156: 
         return UnencryptedCardDTO.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -1715,11 +1747,14 @@ class _DropInPlatformInterfaceCodec extends StandardMessageCodec {
     } else if (value is MerchantInfoDTO) {
       buffer.putUint8(142);
       writeValue(buffer, value.encode());
-    } else if (value is PaymentEventDTO) {
+    } else if (value is OrderCancelResponseDTO) {
       buffer.putUint8(143);
       writeValue(buffer, value.encode());
-    } else if (value is ShippingAddressParametersDTO) {
+    } else if (value is PaymentEventDTO) {
       buffer.putUint8(144);
+      writeValue(buffer, value.encode());
+    } else if (value is ShippingAddressParametersDTO) {
+      buffer.putUint8(145);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -1760,8 +1795,10 @@ class _DropInPlatformInterfaceCodec extends StandardMessageCodec {
       case 142: 
         return MerchantInfoDTO.decode(readValue(buffer)!);
       case 143: 
-        return PaymentEventDTO.decode(readValue(buffer)!);
+        return OrderCancelResponseDTO.decode(readValue(buffer)!);
       case 144: 
+        return PaymentEventDTO.decode(readValue(buffer)!);
+      case 145: 
         return ShippingAddressParametersDTO.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -1920,6 +1957,28 @@ class DropInPlatformInterface {
     );
     final List<Object?>? __pigeon_replyList =
         await __pigeon_channel.send(<Object?>[orderRequestResponse]) as List<Object?>?;
+    if (__pigeon_replyList == null) {
+      throw _createConnectionError(__pigeon_channelName);
+    } else if (__pigeon_replyList.length > 1) {
+      throw PlatformException(
+        code: __pigeon_replyList[0]! as String,
+        message: __pigeon_replyList[1] as String?,
+        details: __pigeon_replyList[2],
+      );
+    } else {
+      return;
+    }
+  }
+
+  Future<void> onOrderCancelResult(OrderCancelResponseDTO orderCancelResponse) async {
+    const String __pigeon_channelName = 'dev.flutter.pigeon.adyen_checkout.DropInPlatformInterface.onOrderCancelResult';
+    final BasicMessageChannel<Object?> __pigeon_channel = BasicMessageChannel<Object?>(
+      __pigeon_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: __pigeon_binaryMessenger,
+    );
+    final List<Object?>? __pigeon_replyList =
+        await __pigeon_channel.send(<Object?>[orderCancelResponse]) as List<Object?>?;
     if (__pigeon_replyList == null) {
       throw _createConnectionError(__pigeon_channelName);
     } else if (__pigeon_replyList.length > 1) {
@@ -2124,29 +2183,32 @@ class _ComponentPlatformInterfaceCodec extends StandardMessageCodec {
     } else if (value is MerchantInfoDTO) {
       buffer.putUint8(147);
       writeValue(buffer, value.encode());
-    } else if (value is OrderResponseDTO) {
+    } else if (value is OrderCancelResponseDTO) {
       buffer.putUint8(148);
       writeValue(buffer, value.encode());
-    } else if (value is PaymentEventDTO) {
+    } else if (value is OrderResponseDTO) {
       buffer.putUint8(149);
       writeValue(buffer, value.encode());
-    } else if (value is PaymentResultDTO) {
+    } else if (value is PaymentEventDTO) {
       buffer.putUint8(150);
       writeValue(buffer, value.encode());
-    } else if (value is PaymentResultModelDTO) {
+    } else if (value is PaymentResultDTO) {
       buffer.putUint8(151);
       writeValue(buffer, value.encode());
-    } else if (value is PlatformCommunicationModel) {
+    } else if (value is PaymentResultModelDTO) {
       buffer.putUint8(152);
       writeValue(buffer, value.encode());
-    } else if (value is SessionDTO) {
+    } else if (value is PlatformCommunicationModel) {
       buffer.putUint8(153);
       writeValue(buffer, value.encode());
-    } else if (value is ShippingAddressParametersDTO) {
+    } else if (value is SessionDTO) {
       buffer.putUint8(154);
       writeValue(buffer, value.encode());
-    } else if (value is UnencryptedCardDTO) {
+    } else if (value is ShippingAddressParametersDTO) {
       buffer.putUint8(155);
+      writeValue(buffer, value.encode());
+    } else if (value is UnencryptedCardDTO) {
+      buffer.putUint8(156);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -2197,20 +2259,22 @@ class _ComponentPlatformInterfaceCodec extends StandardMessageCodec {
       case 147: 
         return MerchantInfoDTO.decode(readValue(buffer)!);
       case 148: 
-        return OrderResponseDTO.decode(readValue(buffer)!);
+        return OrderCancelResponseDTO.decode(readValue(buffer)!);
       case 149: 
-        return PaymentEventDTO.decode(readValue(buffer)!);
+        return OrderResponseDTO.decode(readValue(buffer)!);
       case 150: 
-        return PaymentResultDTO.decode(readValue(buffer)!);
+        return PaymentEventDTO.decode(readValue(buffer)!);
       case 151: 
-        return PaymentResultModelDTO.decode(readValue(buffer)!);
+        return PaymentResultDTO.decode(readValue(buffer)!);
       case 152: 
-        return PlatformCommunicationModel.decode(readValue(buffer)!);
+        return PaymentResultModelDTO.decode(readValue(buffer)!);
       case 153: 
-        return SessionDTO.decode(readValue(buffer)!);
+        return PlatformCommunicationModel.decode(readValue(buffer)!);
       case 154: 
-        return ShippingAddressParametersDTO.decode(readValue(buffer)!);
+        return SessionDTO.decode(readValue(buffer)!);
       case 155: 
+        return ShippingAddressParametersDTO.decode(readValue(buffer)!);
+      case 156: 
         return UnencryptedCardDTO.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
